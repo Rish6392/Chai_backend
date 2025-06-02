@@ -1,12 +1,15 @@
 import express from "express"
-import cors from "cors"
-import cookieParser from "cookie-parser"  // server se user ka browser ka cookie set aur use 
-//cookie pe crud operation perform
+import cors from "cors"    // Imports the cors package to enable Cross-Origin Resource Sharing, allowing your server to handle requests from different origins (domains, ports, etc.).
+import cookieParser from "cookie-parser"  
+//Imports the cookie-parser middleware which allows you to read and manipulate cookies in request and response objects.
 
+const app = express() // Creates an instance of an Express application (app), 
 
-const app = express()
+// read cors npm documentation
+//Adds CORS middleware to allow cross-origin requests.
+//origin: process.env.CORS_ORIGIN: Specifies which frontend origin (like http://localhost:3000) is allowed to access your backend.
+//credentials: true: Allows cookies, authorization headers, or TLS client certificates to be sent in cross-origin requests.
 
-// read cprs npm documentation
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
     credentials:true
