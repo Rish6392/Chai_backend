@@ -2,7 +2,7 @@
 // using promise 
 // writing this code so that we can use is many times db 
 const asyncHandler = (requestHandler) => {
-    (req,res,next)=>{
+    return (req,res,next)=>{
         Promise.resolve(requestHandler(req,res,next)).
         catch((err) => next(err))
     }
