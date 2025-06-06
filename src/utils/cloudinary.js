@@ -23,7 +23,8 @@ const uploadOnCloudinary = async (localFilePath) => {
             resource_type:"auto"  //resource_type: "auto" lets Cloudinary automatically detect if the file is an image, video, etc.
         })
         //file has been uploaded successfully
-        console.log("file is uploaded on cloudinary",response.url);
+        //console.log("file is uploaded on cloudinary",response.url);
+        fs.unlinkSync(localFilePath);  // agar future main file succcesfully upload ho gyi hai to automattically remove ho jayegi
         return response;
 
        }catch(error){

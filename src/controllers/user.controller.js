@@ -30,7 +30,7 @@ const registerUser = asyncHandler( async(req,res)=>{
   }
 
   //step 3
-  const existedUser = User.findOne({
+  const existedUser =await User.findOne({
     $or:[ {username} , {email}]
   })
 
@@ -62,7 +62,7 @@ const registerUser = asyncHandler( async(req,res)=>{
     coverImage:coverImage?.url || "",
     email,
     password,
-    useranme: username.toLowerCase()
+    username: username.toLowerCase()
   })
  
   // user ka saara refrence aaya hai except password and refreshtoken

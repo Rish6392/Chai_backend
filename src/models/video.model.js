@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
 import mongooseAggregatePaginate from   // package => npm i mongoose-aggregate-paginate-v2
 "mongoose-aggregate-paginate-v2";

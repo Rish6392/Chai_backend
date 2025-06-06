@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose"
+import mongoose from "mongoose";
 import jwt from 'jsonwebtoken'   // npm i jsonwebtoken => for generating tokens
 import bcrypt from "bcrypt"      // npm i bcrypt  => use to hash the password
 
@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
     },
     watchHistory: [
         {
-            type: Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
             ref: "Video"
         }
     ],
@@ -93,4 +93,4 @@ userSchema.methods.generateRefreshToken = function(){
     )
 }
 
-export const User = mongoose.model("User", "userSchema")
+export const User = mongoose.model("User", userSchema)
