@@ -4,7 +4,29 @@ import {User} from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 
-//syntax important
+/// generate Access and RefreshToken
+const generateAccessAndRefereshTokens = async(userId)=>{
+  try{
+    const user = await User.findById(userId)
+    const accessToken=user.generateAccessToken()
+    const refreshToken = user.generateRefreshToken()
+
+    //accessToken user ko de do 
+    //refresh token ko database main bhi save karna hai
+    user.refreshToken = refreshToken
+    await user.save({validateBeforeSave:false})  /// imp
+
+    return {accessToken,refreshToken}
+  }
+  catch(error){
+    throw new ApiError(500,"Something went wrong while generating refresh and access token ")
+  }
+}
+
+
+
+
+//syntax important(Register User)
 const registerUser = asyncHandler( async(req,res)=>{
   ///get user deatils from frontend
   //validation-not empty
@@ -89,6 +111,80 @@ const registerUser = asyncHandler( async(req,res)=>{
 
 
 
+})
+
+
+
+// login User
+const loginUser = asyncHandler(async(req,res)=>{
+  // req body -> data
+  // username or email
+  //find the user
+  //password check
+  //access and refresh token
+  // send cookie
+
+  // step 1 
+  const {email,username,password} = req.body
+  // step 2
+  if(!username || !email){
+    throw new ApiError(400,"username or email is required")
+  }
+ 
+  //step 3
+  const user = await User.findOne({  // findOne mongoose ke/se aaya hai
+    $or:[{username},{email}]
+  })
+
+  if(!user){    // user not registered
+    throw new ApiError(404,"User does not exist")
+  }
+
+  // step 4  // khud ka user banaya hua 
+  const isPasswordValid = await user.isPasswordCorrect(password) // isPasswordCorrect from model (user)
+  if(!isPasswordValid){    // user not registered
+    throw new ApiError(401,"Password Incorrect")
+  }
+
+
+  ///step 5 generate access token and the refresh token
+  const {refreshToken,accessToken} = 
+  await generateAccessAndRefereshTokens(user._id)
+
+
+  
+  const loggedInUser = await User.findById(user._id).
+  select("-password -refreshToken")
+
+  // step 6 cookie main bhejo
+  const options = {
+    httpOnly:true,
+    secure:true
+  }
+
+  return res
+  .status(200)
+  .cookie("accessToken",accessToken,options)
+  .cookie("refreshToken",refreshToken,options)
+  .json(
+    new ApiResponse(
+      200,
+      {
+        user:loggedInUser,accessToken,
+        refreshToken
+      },
+      "User logged In Successfully"
+    )
+  )
+  
+  
+})
+
+
+//// logout User
+const logoutUser = asyncHandler(async(req,res)=>{
+  //
+  
 })
 
 
