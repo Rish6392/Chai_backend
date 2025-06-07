@@ -18,7 +18,7 @@ const registerUser = asyncHandler( async(req,res)=>{
 
   // step 1
   const {username,fullName,email,password}=req.body
-  console.log("email: ",email);   // printed in terminal
+ // console.log("email: ",email);   // printed in terminal
   // step 2
   // map aur if se bhi kar sakte hai ek ek karke
 
@@ -37,10 +37,17 @@ const registerUser = asyncHandler( async(req,res)=>{
   if(existedUser){
     throw new ApiError(409,"User with email or username already exist")
   }
+  //console.log(req.files);  imp
 
   //step 4  it is on local servernot yet on cloudinary
   const avatarLocalPath = req.files?.avatar[0]?.path;         // multer fies access 
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  //const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  
+  let coverImageLocalPath;
+  if(req.files && Array.isArray(req.files.
+    coverImage ) && req.files.coverImage.length>0){
+         coverImageLocalPath=req.files.coverImage[0].path;
+  }
 
   if(!avatarLocalPath){
     throw new ApiError(400,"Avatar file is required")
