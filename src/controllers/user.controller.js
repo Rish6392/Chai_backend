@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 
 /// generate Access and RefreshToken
+// It’s typically called after a user is successfully authenticated (like after login).
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
     const user = await User.findById(userId)
@@ -14,6 +15,8 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
     //accessToken user ko de do 
     //refresh token ko database main bhi save karna hai
+    // Saves the refresh token in the database. 
+    // This is important for validating future refresh requests (like during token refresh).
     user.refreshToken = refreshToken
     await user.save({ validateBeforeSave: false })  /// imp
 
@@ -23,7 +26,6 @@ const generateAccessAndRefereshTokens = async (userId) => {
     throw new ApiError(500, "Something went wrong while generating refresh and access token ")
   }
 }
-
 
 
 
@@ -133,7 +135,7 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "username or email is required")
   }
 
-  //step 3
+  //step 3  Find User in Database
   const user = await User.findOne({  // findOne mongoose ke/se aaya hai
     $or: [{ username }, { email }]
   })
@@ -143,6 +145,8 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   // step 4  // khud ka user banaya hua 
+  // Checks if the given password matches the user's stored (hashed) password.
+  // isPasswordCorrect() is a custom method defined in the User model.
   const isPasswordValid = await user.isPasswordCorrect(password) // isPasswordCorrect from model (user)
   if (!isPasswordValid) {    // user not registered
     throw new ApiError(401, "Password Incorrect")
@@ -150,11 +154,23 @@ const loginUser = asyncHandler(async (req, res) => {
 
 
   ///step 5 generate access token and the refresh token
+  // Generates JWT tokens (access & refresh) using the user’s ID.
+  // generateAccessAndRefereshTokens is a helper function you likely defined elsewhere.
+  //Why?
+
+  //After verifying credentials, you must authenticate the user by issuing tokens.
+  //These tokens are then:
+  //Sent to the frontend in cookies.
+  //Used in future requests to prove identity.
+
+  // Taki tumko bar bar login na karna pade ****************************************************IMP*******************************
+
   const { refreshToken, accessToken } =
     await generateAccessAndRefereshTokens(user._id)
 
 
-
+  //Fetches the user data again from the database,
+  //excluding password and refresh token for security.
   const loggedInUser = await User.findById(user._id).
     select("-password -refreshToken")
 
@@ -182,9 +198,19 @@ const loginUser = asyncHandler(async (req, res) => {
 
 
 //// logout User
+// This logoutUser function is an Express controller for securely logging a user out of your application. 
+// It clears the JWT cookies and removes the stored refresh token from the database.
+
+//logoutUser handles secure user logout by:
+//Clearing the stored refresh token in the database.
+//Deleting cookies from the client.
+//This ensures the user is fully logged out and cannot re-authenticate without logging in again.
 const logoutUser = asyncHandler(async (req, res) => {
-  //
+  //Step 1:  Remove Refresh Token from DB
   User.findByIdAndUpdate(
+// Finds the user by their ID (req.user._id) – assuming the user is already authenticated via middleware.
+//Removes the stored refresh token from the database by setting it to undefined.
+//This helps invalidate the refresh token so it can't be used again to get a new access token.
     req.user._id,
     {
       $set: {
@@ -202,7 +228,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   }
 
   return res
-    .status(200)
+    .status(200)        // Deletes the cookies from the client’s browser by clearing both:
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User Logged Out"))
@@ -217,43 +243,43 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "unauthorized request")
   }
 
-  try{
+  try {
     const decodedToken = jwt.verify(   // decoded token milega
-    incomingRefreshToken,
-    process.env.REFRESH_TOKEN_SECRET
-  )
-
-  const user = await User.findById(decodedToken?._id)
-
-  if (!user) {
-    throw new ApiError(401, "Invalid Refresh Token")
-  }
-
-  if (incomingRefreshToken !== user?.refreshToken) {
-    throw new ApiError(401, "Refresh token is expired or used")
-  }
-
-  const options = {
-    httpOnly: true,
-    secure: true
-  }
-
-  const { accessToken, newrefreshToken } =
-    await generateAccessAndRefereshTokens(user._id)
-
-  return res.status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", newrefreshToken, options)
-    .json(
-      new ApiResponse(
-        200,
-        { accessToken, refreshToken: newrefreshToken },
-        "Access token refreshed"
-      )
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
     )
+
+    const user = await User.findById(decodedToken?._id)
+
+    if (!user) {
+      throw new ApiError(401, "Invalid Refresh Token")
+    }
+
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(401, "Refresh token is expired or used")
+    }
+
+    const options = {
+      httpOnly: true,
+      secure: true
+    }
+
+    const { accessToken, newrefreshToken } =
+      await generateAccessAndRefereshTokens(user._id)
+
+    return res.status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newrefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken: newrefreshToken },
+          "Access token refreshed"
+        )
+      )
   }
-  catch(error){
-    throw new ApiError(401,error?.message||
+  catch (error) {
+    throw new ApiError(401, error?.message ||
       "Invalid refresh Token"
     )
   }
