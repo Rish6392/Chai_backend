@@ -214,8 +214,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     //This helps invalidate the refresh token so it can't be used again to get a new access token.
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined
+      $unset: {
+        refreshToken: 1// this removes the field from document
       }
     },
     {
